@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stock Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+            background: #000;
+            color: #fff;
+            font-size: 15px;
+            line-height: 1.5;
+            padding-bottom: 100px;
+        }
+        
+        .header {
+            padding: 20px 16px;
+            text-align: center;
+            border-bottom: 1px solid #222;
+            position: sticky;
+            top: 0;
+            background: #000;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        
+        .header .sub {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 4px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-bottom: 1px solid #222;
+        }
+        
+        .stat {
+            padding: 20px 12px;
+            text-align: center;
+            border-right: 1px solid #222;
+        }
+        
+        .stat:last-child { border-right: none; }
+        
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .section {
+            padding: 20px 16px;
+            border-bottom: 1px solid #222;
+        }
+        
+        .section-title {
+            font-size: 0.75em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        
+        /* 종목 카드 */
+        .ticker-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .ticker-card {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 14px;
+        }
+        
+        .ticker-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .ticker-info {
+            flex: 1;
+        }
+        
+        .ticker-name {
+            font-weight: 600;
+            font-size: 1em;
+            margin-bottom: 2px;
+        }
+        
+        .ticker-symbol {
+            color: #555;
+            font-size: 0.75em;
+        }
+        
+        .ticker-price-wrap {
+            text-align: right;
+        }
+        
+        .ticker-price {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .ticker-change {
+            font-size: 0.8em;
+            margin-top: 2px;
+        }
+        
+        .ticker-change.up {
+            color: #00c853;
+        }
+        
+        .ticker-change.down {
+            color: #ff1744;
+        }
+        
+        .ticker-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ticker-mentions {
+            font-size: 0.75em;
+            color: #555;
+        }
+        
+        .ticker-chart {
+            width: 80px;
+            height: 30px;
+        }
+        
+        .ticker-chart svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 해시태그 */
+        .hashtag-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .hashtag {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        .hashtag span {
+            color: #666;
+            margin-left: 6px;
+            font-size: 0.8em;
+        }
+        
+        /* 워드클라우드 */
+        .wordcloud-wrap {
+            height: 250px;
+            background: #0a0a0a;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        #wordcloud {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 링크 카드 */
+        .link-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .link-card {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: border-color 0.2s;
+        }
+        
+        .link-card:active {
+            border-color: #333;
+        }
+        
+        .link-thumb {
+            width: 100%;
+            height: 140px;
+            background: #111;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .link-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .link-thumb-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+        }
+        
+        .link-thumb-placeholder img {
+            width: 48px;
+            height: 48px;
+            opacity: 0.5;
+        }
+        
+        .link-body {
+            padding: 14px;
+        }
+        
+        .link-title {
+            font-size: 0.95em;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .link-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .link-domain {
+            font-size: 0.75em;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .link-domain img {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .link-meta {
+            font-size: 0.7em;
+            color: #444;
+        }
+        
+        /* 네비게이션 */
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #111;
+            border-top: 2px solid #333;
+            display: flex;
+            z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom, 8px);
+        }
+        
+        .nav-item {
+            flex: 1;
+            padding: 16px 8px;
+            text-align: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            border-top: 3px solid transparent;
+        }
+        
+        .nav-item:hover {
+            color: #999;
+        }
+        
+        .nav-item.active {
+            color: #fff;
+            background: #1a1a1a;
+            border-top: 3px solid #fff;
+        }
+        
+        .nav-icon {
+            display: block;
+            font-size: 1.4em;
+            margin-bottom: 4px;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* AI 분석 */
+        .ai-section {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .ai-section h2 {
+            font-size: 1.1em;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        
+        .ai-section h3 {
+            font-size: 0.95em;
+            color: #fff;
+            margin: 20px 0 10px 0;
+        }
+        
+        .ai-section p {
+            color: #999;
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        
+        .ai-section ul, .ai-section ol {
+            color: #888;
+            font-size: 0.85em;
+            margin-left: 16px;
+            line-height: 1.8;
+        }
+        
+        .ai-section li {
+            margin-bottom: 6px;
+        }
+        
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #333, #222);
+            color: #888;
+            font-size: 0.65em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        /* 스크롤바 */
+        ::-webkit-scrollbar { width: 0; height: 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>STOCK REPORT</h1>
+        <div class="sub">최근 7일 · 2026년 ~ 2026년</div>
+    </div>
+    
+    <div class="page active" id="page-home">
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">239</div>
+                <div class="stat-label">Messages</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">9</div>
+                <div class="stat-label">Stocks</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">50</div>
+                <div class="stat-label">Links</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Top Stocks</div>
+            <div class="ticker-list">
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">엔비디아</div>
+                            <div class="ticker-symbol">NVDA</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$187.05</div>
+                        <div class="ticker-change down">-1.1%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">17회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#ff1744" stroke-width="2" points="0.0,2.0 13.333333333333332,21.08880766773163 26.666666666666664,21.93299424920128 40.0,21.557776357827475 53.33333333333333,17.477398083067094 66.66666666666667,30.0 80.0,11.661628115015976"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">테슬라</div>
+                            <div class="ticker-symbol">TSLA</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$438.57</div>
+                        <div class="ticker-change up">+1.7%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">10회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#00c853" stroke-width="2" points="0.0,30.0 13.333333333333332,22.996031842637 26.666666666666664,8.30196947196728 40.0,2.0 53.33333333333333,4.807946052535481 66.66666666666667,17.57148769384327 80.0,18.576624388343845"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">로켓랩</div>
+                            <div class="ticker-symbol">RKLB</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$90.76</div>
+                        <div class="ticker-change up">+7.9%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">8회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#00c853" stroke-width="2" points="0.0,26.788991275193624 13.333333333333332,30.0 26.666666666666664,24.31652533623577 40.0,14.522938926355353 53.33333333333333,18.761469463177676 66.66666666666667,2.0 80.0,5.339452013564923"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">센트러스</div>
+                            <div class="ticker-symbol">LEU</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$306.10</div>
+                        <div class="ticker-change down">-5.2%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">8회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#ff1744" stroke-width="2" points="0.0,2.0 13.333333333333332,30.0 26.666666666666664,14.795205615500137 40.0,12.454241502741347 53.33333333333333,20.83443134002249 66.66666666666667,13.74291434550518 80.0,14.863830271741072"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">업스타트</div>
+                            <div class="ticker-symbol">UPST</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$47.91</div>
+                        <div class="ticker-change down">-4.8%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">5회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#ff1744" stroke-width="2" points="0.0,3.5149299832324132 13.333333333333332,2.0 26.666666666666664,9.783589971332837 40.0,30.0 53.33333333333333,20.335829967005722 66.66666666666667,23.731340011899576 80.0,16.104479991345762"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">팔란티어</div>
+                            <div class="ticker-symbol">PLTR</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$177.07</div>
+                        <div class="ticker-change down">-2.5%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">5회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#ff1744" stroke-width="2" points="0.0,2.0 13.333333333333332,30.0 26.666666666666664,26.34021457311726 40.0,15.186679878309373 53.33333333333333,17.80077433733376 66.66666666666667,21.053966183681933 80.0,28.780041977567645"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">오클로</div>
+                            <div class="ticker-symbol">OKLO</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$91.45</div>
+                        <div class="ticker-change down">-6.3%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">3회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#ff1744" stroke-width="2" points="0.0,17.575755040299274 13.333333333333332,17.575755040299274 26.666666666666664,2.0 40.0,7.676762494646763 53.33333333333333,18.606062340847863 66.66666666666667,20.868678639567822 80.0,30.0"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">비트코인</div>
+                            <div class="ticker-symbol">BTC-USD</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$95524.31</div>
+                        <div class="ticker-change up">+5.7%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">2회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#00c853" stroke-width="2" points="0.0,30.0 16.0,28.113502327864037 32.0,26.549177695014585 48.0,8.879644832070191 64.0,2.0 80.0,8.012893703960653"/></svg></div>
+                    </div>
+                </div>
+
+                <div class="ticker-card">
+                    <div class="ticker-top">
+                        <div class="ticker-info">
+                            <div class="ticker-name">힘스</div>
+                            <div class="ticker-symbol">HIMS</div>
+                        </div>
+                        
+                    <div class="ticker-price-wrap">
+                        <div class="ticker-price">$31.23</div>
+                        <div class="ticker-change down">-11.9%</div>
+                    </div>
+                    </div>
+                    <div class="ticker-bottom">
+                        <div class="ticker-mentions">1회 언급</div>
+                        <div class="ticker-chart"><svg viewBox="0 0 80 30"><polyline fill="none" stroke="#ff1744" stroke-width="2" points="0.0,2.0 13.333333333333332,12.524824844052812 26.666666666666664,26.955075847552777 40.0,22.652477434214504 53.33333333333333,23.579187442339897 66.66666666666667,29.40425424464026 80.0,30.0"/></svg></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+    </div>
+    
+    <div class="page" id="page-ai">
+        <div class="section">
+            <div class="section-title">AI Analysis <span class="ai-badge">Gemini</span></div>
+
+            <div class="ai-section">
+                <h2>👥 발언자별 투자 성향</h2>
+                <p><h3>🏛️ 주식 토론방 발언 분석 보고서</h3></p><p><strong style="color:#fff">분석 일자:</strong> 2026년 1월 16일<br><strong style="color:#fff">분석 담당:</strong> 주식 투자 전문 애널리스트</p><p>본 보고서는 특정 주식 토론방 참여자들의 발언 내용을 기반으로 각 발언자의 투자 성향과 시장 접근 방식을 전문적으로 분석합니다. 전반적으로 참여자들은 고성장 기술주(NVIDIA, Tesla, 우주 산업)에 대한 관심이 높으며, 단기적인 모멘텀과 거시 경제 이벤트(CPI, 금리)에 민감하게 반응하고 있습니다.</p><p>---</p><p><h3>👥 발언자별 투자 성향 분석</h3></p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">코카콜라(🚀)</h4><br><li><strong style="color:#fff">투자 성향</strong>: 공격적/성장주 중심</li><br><li><strong style="color:#fff">관심 종목</strong>: NVIDIA(NVDA), ASTS, Rocket Lab, Southwest Gas (SWX), Samsara (IOT)</li><br><li><strong style="color:#fff">주요 의견 요약</strong>:</li><br>    가장 활발하게 속보 및 시장 모멘텀 정보를 공유하는 참여자입니다. NVIDIA의 중국 규제 초안 마련, Harmonic 투자 등 즉각적인 기술주 뉴스를 실시간으로 전달하며, ASTS, 로켓랩 같은 고위험 고수익 성장주에 대한 관심을 표명합니다. 특히 기관의 투자의견 상향 리포트(Citi, Barclays, BNP Paribas)를 공유하는 등, 시장의 단기적인 긍정 모멘텀과 애널리스트의 움직임을 중요하게 추적하는 성향이 강합니다.</p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">피치인데용</h4><br><li><strong style="color:#fff">투자 성향</strong>: 중립/거시 경제 및 테마 분석 중심</li><br><li><strong style="color:#fff">관심 종목</strong>: Intel, AMD, NVIDIA, Alphabet (GOOG), Amazon (AMZN), TSMC, OKLO</li><br><li><strong style="color:#fff">주요 의견 요약</strong>:</li><br>    정보의 질이 높고 구조화된 분석을 제공합니다. CPI 발표에 따른 금리 인하 기대감 변화 등 거시 경제 이벤트와 그 시사점을 분석하며, 투자자들이 물가 꺾임에 베팅해야 한다고 조언합니다. 또한, 서버 CPU 수요</p>
+            </div>
+
+            <div class="ai-section">
+                <h2>📈 종목별 의견 분석</h2>
+                <p><h3>📈 종목별 의견 분석</h3></p><p>제시된 주식 토론방 대화 내용을 바탕으로 주요 종목 5가지에 대한 의견을 분석했습니다. 테슬라, 로켓랩, 엔비디아가 핵심 논의 대상이었으며, 팔란티어(PL</p>
+            </div>
+
+            <div class="ai-section">
+                <h2>💡 핵심 투자 아이디어 & 리스크</h2>
+                <p><h3>💡 핵심 투자 아이디어 TOP 5</h3></p><p><li> <strong style="color:#fff">NVIDIA (NVDA): AI 칩 시장 독점 및 헬스케어 확장</strong> (코카콜라(🚀), 피치인데용)</li><br>    *   <strong style="color:#fff">아이디어:</strong> 모건스탠리가 AI 칩 최고주로 선정했으며, 2032년까지 AI 칩 산업 규모가 5,648억 달러로 성장할 것으로 예상되는 가운데 엔비디아의 입지는 확고함. 특히, 알파벳과 아마존 같은 주요 고객사의 긍정적 발언이 최대 위험을 해소하고 있으며, AI 에이전트 및 신약 개발 등 헬스케어 분야로의 영역 확장이 기대됨.</p><p><li> **Intel / AMD: 서버 CPU 수요 폭발</li></p>
+            </div>
+
+            <div class="ai-section">
+                <h2>📰 공유 기사 분석</h2>
+                <p><h3>📰 주요 뉴스 요약</h3></p><p>주식 토론방에서 공유된 22건의 기사를 분석한 결과, <strong style="color:#fff">AI/기술 혁신</strong>, <strong style="color:#fff">지정학적 리스크 및 자원 확보</strong>, <strong style="color:#fff">정책 및 제도 변화</strong>, <strong style="color:#fff">헬스케어 및 비만 치료제</strong>, 그리고 <strong style="color:#fff">국내 기업 구조조정</strong>이 주요 테마로 나타났습니다.</p><p><li><strong style="color:#fff">AI 기술 경쟁 심화 및 헬스케어 진출:</strong> OpenAI, Anthropic, Google 등 주요 빅테크 기업들이 AI 모델을 헬스케어 분야(ChatGPT Health, Claude for Healthcare)에 적용하며 경쟁하고 있습니다. 또한, Google은 Gemini의 'Personal Intelligence'를 통해 개인화된 AI 서비스를 강화하고 있으며, OpenAI는 헬스케어 스타트업 Torch를 인수하며 이 분야에 대한 투자를 확대하고 있습니다.</li><br><li><strong style="color:#fff">AI 인프라 및 전력 문제 부상:</strong> 트럼프 대통령이 데이터센터로 인한 국민 전기료 상승을 우려하는 발언을 하면서, AI 산업의 급격한 성장이 야기하는 전력 수요와 관련된 정책적 논의가 수면 위로 떠올랐습니다.</li><br><li><strong style="color:#fff">지정학적 리스크와 자원/방산:</strong> 미국과 덴마크 정보기관이 그린란드와 북극 지역에 대한 러시아 및 중국의 군사적 목표를 경고하고 있으며, 이로 인해 광물 채굴 등 상업적 기회가 주목받고 있습니다. 또한, 미국은 AI, 드론, 우주 기술 분야에서 군사적 리력을 강화하려는 전략을 발표했으며, 팔란티어(Palantir)는 AI 기반 조선 및 유지보수 시스템(ShipOS)을 해군에 적용하고 있습니다.</li><br><li><strong style="color:#fff">메모리(NAND) 가격 급등:</strong> AI 서버 구축에 따른 거대한 저장 수요 폭발로 인해 2026년 1분기 NAND 플래시 메모리 계약 가격이 60~70% 급등할 것으로 예상되며, 일부 공급업체는 100% 인상을 제안하는 등 공급 부족과 가격 상승이 심각한 상황입니다.</li><br><li><strong style="color:#fff">퇴직연금 및 금융 제도 변화:</strong> 미국에서는 401(k) 퇴직연금에 암호화폐를 포함시키려는 움직임에 대해 엘리자베스 워렌 상원의원이 우려를 표명하고 있습니다. 한국에서는 당정이 퇴직연금 기금화에 대해 별도로 논의할 예정이며, 이는 금융 시장에 큰 변화를 예고합니다.</li><br><li><strong style="color:#fff">메타의 사업 재편 및 규제 대응:</strong> Meta Platforms는 Reality Labs 부서의 일자리 10%를 감축하고 AI 웨어러블 등 다른 분야로 자금을 전환하려는 구조조정을 단행하고 있습니다. 동시에, 호주에서 16세 미만 사용자에 대한 소셜 미디어 금지 조치에 대해 재고를 요청하며 규제 문제에 대응하고 있습니다.</li></p><p>---</p><p><h3>🔥 핫 이슈</h3></p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">TOP 1. AI 기술의 헬스케어 및 방산 분야 확장 (OpenAI, Anthropic, Palantir 등)</h4><br><li><strong style="color:#fff">내용:</strong> OpenAI와 Anthropic이 헬스케어 전용 AI 모델을 출시하고, OpenAI는 헬스케어 스타트업 Torch를 인수했습니다. 동시에 미국 국방부는 AI, 드론, 우주 기술 분야에서 리더가 되기 위한 전략을 발표했으며, Palantir는 해군 조선소에 AI 기반 ShipOS를 적용하고 있습니다.</li><br><li><strong style="color:#fff">시장 영향:</strong> AI 기술이 단순한 LLM을 넘어 고부가가치 산업(헬스케어, 국방)으로 빠르게 침투하고 있음을 보여줍니다. 이는 <strong style="color:#fff">헬스케어 IT 섹터, 국방/방산 AI 관련 기업(예: Palantir, 한화 에어로스페이스 등)</strong>의 가치 상승을 촉진할 수 있습니다. AI 서비스의 수익 모델 다각화에 대한 기대감을 높입니다.</li></p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">TOP 2. NAND 플래시 메모리 가격 폭등 (SanDisk 100% 인상 제안)</h4><br><li><strong style="color:#fff">내용:</strong> AI 서버의 폭발적인 수요로 인해 NAND 플래시 메모리 계약 가격이 예상보다 훨씬 높은 수준(최대 100%)으로 급등할 것이라는 소식이 전해졌습니다.</li><br><li><strong style="color:#fff">시장 영향:</strong> 메모리 반도체 산업의 강력한 업사이클이 예상보다 강하고 길어질 수 있음을 시사합니다. <strong style="color:#fff">삼성전자, SK하이닉스 등 국내 메모리 제조사</strong>의 실적 전망치를 상향 조정하는 요인으로 작용하며, 특히 AI 서버 구축에 필수적인 고용량 저장장치(SSD) 관련 기업들에 긍정적입니다. 다만, 중저가 소비자용 제품 생산에는 압박이 가해질 수 있습니다.</li></p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">TOP 3. 트럼프의 AI 데이터센터 전력 비용 우려 및 지정학적 리스크 (그린란드/북극)</h4><br><li><strong style="color:#fff">내용:</strong> 트럼프가 AI 데이터센터의 전력 사용으로 인한 국민 전기료 부담 증가를 우려하며 정책 개입 가능성을 시사했습니다. 또한, 그린란드와 북극 지역을 둘러싼 지정학적 긴장과 광물 자원 확보에 대한 관심이 높아지고 있습니다.</li><br><li><strong style="color:#fff">시장 영향:</strong> AI 산업 성장의 '숨겨진 비용(전력)'이 본격적인 정치적 이슈로 부상하며, <strong style="color:#fff">전력 인프라(변압기, 전선), 원자력 발전, 신재생 에너지</strong> 관련 기업들에 대한 투자 수요를 자극할 수 있습니다. 또한, 북극 자원과 관련된 <strong style="color:#fff">희소금속 채굴 및 방산 기업</strong>에 대한 관심이 높아질 수 있습니다.</li></p><p>---</p><p><h3>📈 투자 시사점</h3></p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">1. AI 인프라 및 전력 솔루션</h4><br><li><strong style="color:#fff">시사점:</strong> AI 데이터센터의 전력 소비 문제가 정치적 이슈로 부상함에 따라, 전력 효율화 기술 및 안정적인 전력 공급 솔루션에 대한 수요가 급증할 것입니다.</li><br><li><strong style="color:#fff">영향 섹터/종목:</strong></li><br>    * <strong style="color:#fff">전력 인프라:</strong> 변압기, 전력망 구축 관련 기업 (미국 전력망 투자 수혜주).<br>    * <strong style="color:#fff">에너지:</strong> 원자력 발전 및 고효율 에너지 관리 시스템(EMS) 관련 기술 보유 기업.</p><p><h4 style="color:#ccc;margin:16px 0 8px 0;font-size:0.9em;">2. 헬스케어 AI 및 비만 치료제</h4><br><li><strong style="color:#fff">시사점:</strong> 빅테크의 헬스케어 AI 진입은 의료 서비스의 디지털 전환을 가속화하며, 관련 소프트웨어, 진단 기기, 의료 데이터 플랫폼 기업에 혁신 기회를 제공합니다. 한편, Novo Nordisk의 공격적인 비만 치료제 M&A 의지는 이 시장의 폭발적 성장을 재확인합니다.</li><br><li><strong style="color:#fff">영향 섹터/종목:</strong></li><br>    * **헬스</p>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="page" id="page-words">
+        <div class="section">
+            <div class="section-title">Word Cloud</div>
+            <div class="wordcloud-wrap">
+                <canvas id="wordcloud"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page" id="page-tags">
+        <div class="section">
+            <div class="section-title">Hashtags</div>
+            <div class="hashtag-wrap">
+<div class="hashtag">#미국<span>2</span></div><div class="hashtag">#슈카<span>1</span></div><div class="hashtag">#삼성바이오로직스<span>1</span></div><div class="hashtag">#삼성에피스홀딩스<span>1</span></div><div class="hashtag">#REPORT<span>1</span></div><div class="hashtag">#레드<span>1</span></div><div class="hashtag">#투석기<span>1</span></div><div class="hashtag">#이거<span>1</span></div><div class="hashtag">#베센트<span>1</span></div><div class="hashtag">#Key<span>1</span></div><div class="hashtag">#Summary<span>1</span></div><div class="hashtag">#특징종목<span>1</span></div><div class="hashtag">#채권<span>1</span></div><div class="hashtag">#hlit<span>1</span></div><div class="hashtag">#한국은행<span>1</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page" id="page-links">
+        <div class="section">
+            <div class="section-title">Shared Links</div>
+            <div class="link-list">
+
+                <a href="https://youtu.be/NvFq39PygEI?si=4-sUx6R9B4mR82nO" target="_blank" class="link-card">
+                    <div class="link-thumb"><div class="link-thumb-placeholder"><img src="https://www.google.com/s2/favicons?domain=youtu.be&sz=64"></div></div>
+                    <div class="link-body">
+                        <div class="link-title">youtu.be</div>
+                        <div class="link-bottom">
+                            <div class="link-domain">
+                                <img src="https://www.google.com/s2/favicons?domain=youtu.be&sz=64" alt="">
+                                youtu.be
+                            </div>
+                            <div class="link-meta">2026년</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://labs.google/disco" target="_blank" class="link-card">
+                    <div class="link-thumb"><img src="/assets/images/tools/disco.webp" alt="" onerror="this.parentElement.innerHTML='<div class=link-thumb-placeholder><img src=https://www.google.com/s2/favicons?domain=labs.google&sz=64></div>'"></div>
+                    <div class="link-body">
+                        <div class="link-title">LABS.GOOGLE</div>
+                        <div class="link-bottom">
+                            <div class="link-domain">
+                                <img src="https://www.google.com/s2/favicons?domain=labs.google&sz=64" alt="">
+                                labs.google
+                            </div>
+                            <div class="link-meta">2026년</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://blog.google/innovation-and-ai/products/gemini-app/personal-intelligence/" target="_blank" class="link-card">
+                    <div class="link-thumb"><img src="https://storage.googleapis.com/gweb-uniblog-publish-prod/images/B4JwuvCyeLHELEu.width-1300.png" alt="" onerror="this.parentElement.innerHTML='<div class=link-thumb-placeholder><img src=https://www.google.com/s2/favicons?domain=blog.google&sz=64></div>'"></div>
+                    <div class="link-body">
+                        <div class="link-title">Gemini introduces Personal Intelligence</div>
+                        <div class="link-bottom">
+                            <div class="link-domain">
+                                <img src="https://www.google.com/s2/favicons?domain=blog.google&sz=64" alt="">
+                                blog.google
+                            </div>
+                            <div class="link-meta">2026년</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://www.bloomberg.com/news/articles/2026-01-13/novo-s-ceo-is-ready-to-go-very-big-in-hunt-for-obesity-deals" target="_blank" class="link-card">
+                    <div class="link-thumb"><img src="https://assets.bwbx.io/images/users/iqjWHBFdfxIU/iJw4FXx3638I/v0/1200x800.jpg" alt="" onerror="this.parentElement.innerHTML='<div class=link-thumb-placeholder><img src=https://www.google.com/s2/favicons?domain=www.bloomberg.com&sz=64></div>'"></div>
+                    <div class="link-body">
+                        <div class="link-title">Novo's CEO Ready to Go 'Very Big' in Hunt for Obesity Deals</div>
+                        <div class="link-bottom">
+                            <div class="link-domain">
+                                <img src="https://www.google.com/s2/favicons?domain=www.bloomberg.com&sz=64" alt="">
+                                bloomberg.com
+                            </div>
+                            <div class="link-meta">2026년</div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://www.palantir.com/shipos" target="_blank" class="link-card">
+                    <div class="link-thumb"><img src="https://www.palantir.com/assets/xrfr7uokpv1b/oeyCpnGkbdLbVeADsGaIv/57c3b13cdf6b397048a566dbbc309026/social.jpg" alt="" onerror="this.parentElement.innerHTML='<div class=link-thumb-placeholder><img src=https://www.google.com/s2/favicons?domain=www.palantir.com&sz=64></div>'"></div>
+                    <div class="link-body">
+                        <div class="link-title">ShipOS</div>
+                        <div class="link-bottom">
+                            <div class="link-domain">
+                                <img src="https://www.google.com/s2/favicons?domain=www.palantir.com&sz=64" alt="">
+                                palantir.com
+                            </div>
+                            <div class="link-meta">2026년</div>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </div>
+    
+    <div class="nav">
+        <a href="#" class="nav-item active" onclick="showPage('home')">
+            <span class="nav-icon">📊</span>Home
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('ai')">
+            <span class="nav-icon">🤖</span>AI
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('words')">
+            <span class="nav-icon">☁️</span>Cloud
+        </a>
+        <a href="#" class="nav-item" onclick="showPage('links')">
+            <span class="nav-icon">🔗</span>Links
+        </a>
+    </div>
+    
+    <script>
+        function showPage(name) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('page-' + name).classList.add('active');
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        
+        // 워드클라우드
+        const wordData = [["조정", 98], ["상승", 92], ["매수", 67], ["하락", 61], ["금리", 54], ["실적", 45], ["엔비디아", 40], ["연준", 31], ["인하", 19], ["반등", 14], ["급등", 12], ["인상", 11], ["매도", 11], ["테슬라", 10], ["급락", 10], ["레버", 8], ["지지", 7], ["로켓랩", 7], ["팔란티어", 7], ["돌파", 5], ["오클로", 5], ["홀딩", 4], ["신고", 3], ["폭등", 3], ["전고", 2], ["존버", 2], ["비트코인", 2], ["호재", 2], ["익절", 2], ["어닝", 1], ["힘스", 1], ["손절", 1], ["저항", 1], ["불장", 1]];
+        
+        if (wordData.length > 0) {
+            const canvas = document.getElementById('wordcloud');
+            const maxCount = Math.max(...wordData.map(w => w[1]));
+            
+            WordCloud(canvas, {
+                list: wordData.map(([word, count]) => [word, Math.max(12, (count / maxCount) * 60)]),
+                gridSize: 8,
+                weightFactor: 1,
+                fontFamily: '-apple-system, sans-serif',
+                color: function(word, weight) {
+                    const brightness = 40 + (weight / 60) * 60;
+                    return `hsl(0, 0%, ${brightness}%)`;
+                },
+                backgroundColor: '#0a0a0a',
+                rotateRatio: 0,
+                minRotation: 0,
+                maxRotation: 0,
+            });
+        }
+    </script>
+</body>
+</html>
