@@ -249,11 +249,11 @@
         let currentMonth = new Date().getMonth();
         let selectedTeam = 'all';
 
-        const BASE_DATE = new Date(2025, 0, 10);
+        const BASE_DATE = new Date(2025, 0, 12); // 1월 12일 기준
         const ROTATION = [
-            { day: 'C', night: 'A', off: 'B' },
-            { day: 'B', night: 'C', off: 'A' },
-            { day: 'A', night: 'B', off: 'C' },
+            { day: 'B', night: 'C', off: 'A' },  // 12-13일
+            { day: 'A', night: 'B', off: 'C' },  // 14-15일
+            { day: 'C', night: 'A', off: 'B' },  // 16-17일
         ];
 
         function getShift(date) {
