@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;근무표&quot;,&quot;short_name&quot;:&quot;근무표&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23f5f5f7&quot;,&quot;theme_color&quot;:&quot;%23ffffff&quot;}">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
     <title>근무표</title>
     <style>
         * {
@@ -22,7 +27,30 @@
             color: #1d1d1f;
             display: flex;
             flex-direction: column;
+            transition: background 0.3s, color 0.3s;
         }
+
+        /* 다크 모드 */
+        body.dark {
+            background: #1c1c1e;
+            color: #f5f5f7;
+        }
+        body.dark .header { background: #2c2c2e; border-color: #3a3a3c; }
+        body.dark .nav-btn { background: #3a3a3c; border-color: #4a4a4c; color: #f5f5f7; }
+        body.dark .month-title { color: #f5f5f7; }
+        body.dark .team-tab { background: #2c2c2e; border-color: #3a3a3c; color: #8e8e93; }
+        body.dark .sub-header { background: #2c2c2e; border-color: #3a3a3c; }
+        body.dark .weekday-header { background: #2c2c2e; border-color: #3a3a3c; }
+        body.dark .calendar { background: #3a3a3c; }
+        body.dark .day { background: #2c2c2e; }
+        body.dark .day.empty { background: #1c1c1e; }
+        body.dark .day.sun { background: #2a2025; }
+        body.dark .day.sat { background: #202530; }
+        body.dark .day.today { background: #3a3020; box-shadow: inset 0 0 0 2px #ff9f0a; }
+        body.dark .day-num { color: #f5f5f7; }
+        body.dark .today-btn { background: #2c2c2e; border-color: #3a3a3c; }
+        body.dark .today-info { background: #2c2c2e; border-color: #3a3a3c; }
+        body.dark .dday-info { background: #2c2c2e; border-color: #3a3a3c; }
 
         /* 헤더 */
         .header {
@@ -36,8 +64,58 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
+
+        /* 오늘 근무 정보 */
+        .today-info {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: #fff;
+            border: 1px solid #e5e5e7;
+            border-radius: 12px;
+        }
+        .today-info.show { display: flex; }
+        .today-label { font-size: 0.85rem; color: #86868b; }
+        .today-shift {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 4px 14px;
+            border-radius: 8px;
+        }
+        .today-shift.day-s { background: #ff9500; color: #fff; }
+        .today-shift.night-s { background: #5856d6; color: #fff; }
+        .today-shift.off-s { background: #5ac8fa; color: #fff; }
+
+        /* D-day 정보 */
+        .dday-info {
+            display: none;
+            font-size: 0.8rem;
+            color: #86868b;
+        }
+        .dday-info.show { display: block; }
+        .dday-num { font-weight: 700; color: #5ac8fa; }
+
+        /* 다크모드 토글 */
+        .dark-toggle {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border: 1px solid #e5e5e7;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        body.dark .dark-toggle { background: #2c2c2e; border-color: #3a3a3c; }
 
         .nav-btn {
             width: 40px;
@@ -169,6 +247,28 @@
             box-shadow: inset 0 0 0 2px #ff9500;
         }
 
+        .day.holiday {
+            background: #fff0f0;
+        }
+        .day.holiday .day-num {
+            color: #ff3b30;
+        }
+        body.dark .day.holiday {
+            background: #3a2025;
+        }
+
+        .holiday-name {
+            font-size: 0.5rem;
+            color: #ff3b30;
+            text-align: center;
+            line-height: 1;
+            margin-top: 1px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .day-num {
             font-size: 1rem;
             font-weight: 600;
@@ -256,6 +356,14 @@
             <span class="month-title" id="month-title">2025년 1월</span>
             <button class="nav-btn" onclick="changeMonth(1)">▶</button>
         </div>
+        
+        <!-- 오늘 근무 정보 (조 선택 시 표시) -->
+        <div class="today-info" id="today-info">
+            <span class="today-label">오늘</span>
+            <span class="today-shift" id="today-shift">비번</span>
+            <span class="dday-info" id="dday-info">다음 비번 <span class="dday-num" id="dday-num">D-2</span></span>
+        </div>
+
         <div class="team-tabs">
             <button class="team-tab all active" onclick="selectTeam('all')">전체</button>
             <button class="team-tab a" onclick="selectTeam('A')">A</button>
@@ -283,11 +391,13 @@
     <div class="calendar" id="calendar"></div>
 
     <button class="today-btn" onclick="goToday()">📅</button>
+    <button class="dark-toggle" onclick="toggleDark()">🌙</button>
 
     <script>
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
-        let selectedTeam = 'all';
+        let selectedTeam = localStorage.getItem('selectedTeam') || 'all';
+        let isDark = localStorage.getItem('darkMode') === 'true';
 
         const BASE_DATE = new Date(2025, 0, 7); // 1월 7일 기준
         const ROTATION = [
@@ -295,6 +405,68 @@
             { day: 'C', night: 'A', off: 'B' },  // Phase 1: 2/3-4 B조 비번
             { day: 'B', night: 'C', off: 'A' },  // Phase 2
         ];
+
+        // 한국 공휴일 (2025-2027)
+        const HOLIDAYS = {
+            '2025-1-1': '신정',
+            '2025-1-28': '설날',
+            '2025-1-29': '설날',
+            '2025-1-30': '설날',
+            '2025-3-1': '삼일절',
+            '2025-5-5': '어린이날',
+            '2025-5-6': '대체휴일',
+            '2025-6-6': '현충일',
+            '2025-8-15': '광복절',
+            '2025-10-3': '개천절',
+            '2025-10-5': '추석',
+            '2025-10-6': '추석',
+            '2025-10-7': '추석',
+            '2025-10-8': '대체휴일',
+            '2025-10-9': '한글날',
+            '2025-12-25': '크리스마스',
+            '2026-1-1': '신정',
+            '2026-2-16': '설날',
+            '2026-2-17': '설날',
+            '2026-2-18': '설날',
+            '2026-3-1': '삼일절',
+            '2026-3-2': '대체휴일',
+            '2026-5-5': '어린이날',
+            '2026-5-24': '부처님오신날',
+            '2026-6-6': '현충일',
+            '2026-8-15': '광복절',
+            '2026-8-17': '대체휴일',
+            '2026-9-24': '추석',
+            '2026-9-25': '추석',
+            '2026-9-26': '추석',
+            '2026-10-3': '개천절',
+            '2026-10-5': '대체휴일',
+            '2026-10-9': '한글날',
+            '2026-12-25': '크리스마스',
+            '2027-1-1': '신정',
+            '2027-2-6': '설날',
+            '2027-2-7': '설날',
+            '2027-2-8': '설날',
+            '2027-2-9': '대체휴일',
+            '2027-3-1': '삼일절',
+            '2027-5-5': '어린이날',
+            '2027-5-13': '부처님오신날',
+            '2027-6-6': '현충일',
+            '2027-6-7': '대체휴일',
+            '2027-8-15': '광복절',
+            '2027-8-16': '대체휴일',
+            '2027-9-14': '추석',
+            '2027-9-15': '추석',
+            '2027-9-16': '추석',
+            '2027-10-3': '개천절',
+            '2027-10-4': '대체휴일',
+            '2027-10-9': '한글날',
+            '2027-10-11': '대체휴일',
+            '2027-12-25': '크리스마스',
+        };
+
+        function getHoliday(year, month, day) {
+            return HOLIDAYS[`${year}-${month + 1}-${day}`] || null;
+        }
 
         function getShift(date) {
             const diff = Math.floor((date - BASE_DATE) / (1000 * 60 * 60 * 24));
@@ -312,6 +484,77 @@
             if (type === 'day-s') return '주간';
             if (type === 'night-s') return '야간';
             return '비번';
+        }
+
+        // 다음 비번까지 D-day 계산
+        function getDaysUntilOff(team) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            for (let i = 0; i <= 30; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() + i);
+                const shift = getShift(checkDate);
+                if (shift.off === team) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // 오늘 근무 정보 업데이트
+        function updateTodayInfo() {
+            const infoEl = document.getElementById('today-info');
+            const shiftEl = document.getElementById('today-shift');
+            const ddayInfoEl = document.getElementById('dday-info');
+            const ddayNumEl = document.getElementById('dday-num');
+
+            if (selectedTeam === 'all') {
+                infoEl.classList.remove('show');
+                return;
+            }
+
+            const today = new Date();
+            const shift = getShift(today);
+            const myShift = getTeamShift(shift, selectedTeam);
+            const shiftName = getShiftName(myShift);
+
+            infoEl.classList.add('show');
+            shiftEl.textContent = shiftName;
+            shiftEl.className = 'today-shift ' + myShift;
+
+            // D-day (비번 아닐 때만 표시)
+            if (myShift !== 'off-s') {
+                const daysUntil = getDaysUntilOff(selectedTeam);
+                if (daysUntil > 0) {
+                    ddayNumEl.textContent = `D-${daysUntil}`;
+                    ddayInfoEl.classList.add('show');
+                } else {
+                    ddayInfoEl.classList.remove('show');
+                }
+            } else {
+                ddayInfoEl.classList.remove('show');
+            }
+        }
+
+        // 다크모드 토글
+        function toggleDark() {
+            isDark = !isDark;
+            document.body.classList.toggle('dark', isDark);
+            document.querySelector('.dark-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+            
+            // 테마 컬러 업데이트
+            document.querySelector('meta[name="theme-color"]').content = isDark ? '#1c1c1e' : '#ffffff';
+        }
+
+        // 초기 다크모드 적용
+        function initDarkMode() {
+            if (isDark) {
+                document.body.classList.add('dark');
+                document.querySelector('.dark-toggle').textContent = '☀️';
+                document.querySelector('meta[name="theme-color"]').content = '#1c1c1e';
+            }
         }
 
         function render() {
@@ -340,17 +583,22 @@
                 const dow = date.getDay();
                 const shift = getShift(date);
                 const isToday = date.getTime() === today.getTime();
+                const holiday = getHoliday(currentYear, currentMonth, dayNum);
 
                 let cls = 'day';
-                if (dow === 0) cls += ' sun';
+                if (dow === 0 || holiday) cls += ' sun';
                 else if (dow === 6) cls += ' sat';
+                if (holiday) cls += ' holiday';
                 if (isToday) cls += ' today';
 
                 let content = '';
 
+                const holidayHtml = holiday ? `<div class="holiday-name">${holiday}</div>` : '';
+
                 if (selectedTeam === 'all') {
                     content = `
                         <div class="day-num">${dayNum}</div>
+                        ${holidayHtml}
                         <div class="shifts">
                             <div class="shift day-s"><span>주</span><span class="shift-team">${shift.day}</span></div>
                             <div class="shift night-s"><span>야</span><span class="shift-team">${shift.night}</span></div>
@@ -362,6 +610,7 @@
                     const name = getShiftName(myShift);
                     content = `
                         <div class="day-num">${dayNum}</div>
+                        ${holidayHtml}
                         <div class="my-shift ${myShift}">${name}</div>
                     `;
                 }
@@ -379,9 +628,11 @@
 
         function selectTeam(team) {
             selectedTeam = team;
+            localStorage.setItem('selectedTeam', team);
             document.querySelectorAll('.team-tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`.team-tab.${team === 'all' ? 'all' : team.toLowerCase()}`).classList.add('active');
             render();
+            updateTodayInfo();
         }
 
         function goToday() {
@@ -397,7 +648,17 @@
             if (Math.abs(diff) > 80) changeMonth(diff > 0 ? 1 : -1);
         });
 
+        // 초기화
+        initDarkMode();
+        
+        // 저장된 조 선택 복원
+        if (selectedTeam !== 'all') {
+            document.querySelectorAll('.team-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.team-tab.${selectedTeam.toLowerCase()}`).classList.add('active');
+        }
+        
         render();
+        updateTodayInfo();
     </script>
 </body>
 </html>
