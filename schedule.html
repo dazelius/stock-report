@@ -18,16 +18,17 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
+            background: #f5f5f7;
+            color: #1d1d1f;
             display: flex;
             flex-direction: column;
         }
 
-        /* 헤더 - 콤팩트 */
+        /* 헤더 */
         .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            padding: 12px;
+            background: #fff;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e5e7;
             flex-shrink: 0;
         }
 
@@ -35,94 +36,119 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .nav-btn {
-            width: 44px;
-            height: 44px;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.3rem;
+            width: 40px;
+            height: 40px;
+            background: #f5f5f7;
+            border: 1px solid #e5e5e7;
+            border-radius: 8px;
+            color: #1d1d1f;
+            font-size: 1.1rem;
             cursor: pointer;
         }
 
-        .month-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+        .nav-btn:active {
+            background: #e5e5e7;
         }
 
-        /* 팀 선택 - 한줄 */
+        .month-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        /* 팀 선택 */
         .team-tabs {
             display: flex;
-            gap: 6px;
+            gap: 8px;
         }
 
         .team-tab {
             flex: 1;
             padding: 10px 4px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 700;
+            border: 1px solid #e5e5e7;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
             cursor: pointer;
+            background: #fff;
+            color: #86868b;
+            transition: all 0.15s;
         }
 
-        .team-tab.all { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .team-tab.a { background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; }
-        .team-tab.b { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
-        .team-tab.c { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+        .team-tab.active {
+            border-color: #0071e3;
+            background: #0071e3;
+            color: #fff;
+        }
 
-        .team-tab:not(.active) { opacity: 0.4; }
+        .team-tab.a.active { background: #ff3b30; border-color: #ff3b30; }
+        .team-tab.b.active { background: #007aff; border-color: #007aff; }
+        .team-tab.c.active { background: #34c759; border-color: #34c759; }
 
         /* 범례 + 요일 */
         .sub-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.2);
+            justify-content: center;
+            gap: 24px;
+            padding: 10px 12px;
+            background: #fff;
+            border-bottom: 1px solid #e5e5e7;
             flex-shrink: 0;
+            font-size: 0.8rem;
+            color: #86868b;
         }
 
-        .legend {
+        .legend-item {
             display: flex;
-            gap: 12px;
-            font-size: 0.85rem;
+            align-items: center;
+            gap: 6px;
         }
 
-        .legend span { opacity: 0.9; }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        .legend-dot.day-s { background: #ff9500; }
+        .legend-dot.night-s { background: #5856d6; }
+        .legend-dot.off-s { background: #5ac8fa; }
 
         .weekday-header {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             text-align: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            padding: 6px 4px;
-            background: rgba(0,0,0,0.15);
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 8px 4px;
+            background: #fff;
+            border-bottom: 1px solid #e5e5e7;
             flex-shrink: 0;
+            color: #86868b;
         }
 
-        .weekday.sun { color: #ff6b6b; }
-        .weekday.sat { color: #74b9ff; }
+        .weekday.sun { color: #ff3b30; }
+        .weekday.sat { color: #007aff; }
 
-        /* 캘린더 - flex로 꽉 채우기 */
+        /* 캘린더 */
         .calendar {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             grid-template-rows: repeat(6, 1fr);
-            gap: 3px;
-            padding: 4px;
+            gap: 1px;
+            padding: 1px;
+            background: #e5e5e7;
             min-height: 0;
         }
 
         .day {
-            background: rgba(255,255,255,0.08);
-            border-radius: 10px;
+            background: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -132,78 +158,94 @@
         }
 
         .day.empty {
-            background: transparent;
+            background: #fafafa;
         }
 
-        .day.sun { background: rgba(255,107,107,0.15); }
-        .day.sat { background: rgba(116,185,255,0.15); }
+        .day.sun { background: #fff5f5; }
+        .day.sat { background: #f5f8ff; }
 
         .day.today {
-            background: rgba(241,196,15,0.25);
-            border: 2px solid #f1c40f;
-            box-shadow: 0 0 10px rgba(241,196,15,0.4);
+            background: #fffbeb;
+            box-shadow: inset 0 0 0 2px #ff9500;
         }
 
         .day-num {
-            font-size: 1.1rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1d1d1f;
             line-height: 1;
         }
 
-        .day.sun .day-num { color: #ff6b6b; }
-        .day.sat .day-num { color: #74b9ff; }
-        .day.today .day-num { color: #f1c40f; }
+        .day.sun .day-num { color: #ff3b30; }
+        .day.sat .day-num { color: #007aff; }
 
         /* 전체 보기 */
         .shifts {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             width: 100%;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .shift {
             display: flex;
             justify-content: space-between;
             padding: 2px 4px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 600;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 500;
         }
 
-        .shift.day-s { background: linear-gradient(90deg, #f39c12, #e67e22); }
-        .shift.night-s { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
-        .shift.off-s { background: linear-gradient(90deg, #81ecec, #00cec9); }
+        .shift.day-s { background: #fff3e0; color: #e65100; }
+        .shift.night-s { background: #ede7f6; color: #4527a0; }
+        .shift.off-s { background: #e0f7fa; color: #00838f; }
+
+        .shift-team {
+            font-weight: 700;
+        }
 
         /* 단일 팀 */
         .my-shift {
-            font-size: 0.95rem;
-            font-weight: 800;
+            font-size: 0.85rem;
+            font-weight: 700;
             padding: 6px 4px;
-            border-radius: 8px;
+            border-radius: 6px;
             text-align: center;
             width: 90%;
-            margin-top: 3px;
+            margin-top: 4px;
         }
 
-        .my-shift.day-s { background: linear-gradient(135deg, #f39c12, #e67e22); }
-        .my-shift.night-s { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
-        .my-shift.off-s { background: linear-gradient(135deg, #81ecec, #00cec9); color: #000; }
+        .my-shift.day-s { 
+            background: #ff9500; 
+            color: #fff;
+        }
+        .my-shift.night-s { 
+            background: #5856d6; 
+            color: #fff;
+        }
+        .my-shift.off-s { 
+            background: #5ac8fa; 
+            color: #fff;
+        }
 
         /* 오늘 버튼 */
         .today-btn {
             position: fixed;
             bottom: 16px;
             right: 16px;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #f1c40f, #f39c12);
-            border: none;
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border: 1px solid #e5e5e7;
             border-radius: 50%;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(241,196,15,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .today-btn:active {
+            background: #f5f5f7;
         }
     </style>
 </head>
@@ -223,11 +265,9 @@
     </header>
 
     <div class="sub-header">
-        <div class="legend">
-            <span>☀️주간</span>
-            <span>🌙야간</span>
-            <span>🏠비번</span>
-        </div>
+        <div class="legend-item"><div class="legend-dot day-s"></div>주간</div>
+        <div class="legend-item"><div class="legend-dot night-s"></div>야간</div>
+        <div class="legend-item"><div class="legend-dot off-s"></div>비번</div>
     </div>
 
     <div class="weekday-header">
@@ -249,11 +289,11 @@
         let currentMonth = new Date().getMonth();
         let selectedTeam = 'all';
 
-        const BASE_DATE = new Date(2025, 0, 12); // 1월 12일 기준
+        const BASE_DATE = new Date(2025, 0, 12);
         const ROTATION = [
-            { day: 'B', night: 'C', off: 'A' },  // 12-13일
-            { day: 'A', night: 'B', off: 'C' },  // 14-15일
-            { day: 'C', night: 'A', off: 'B' },  // 16-17일
+            { day: 'B', night: 'C', off: 'A' },
+            { day: 'A', night: 'B', off: 'C' },
+            { day: 'C', night: 'A', off: 'B' },
         ];
 
         function getShift(date) {
@@ -269,9 +309,9 @@
         }
 
         function getShiftName(type) {
-            if (type === 'day-s') return '☀️주간';
-            if (type === 'night-s') return '🌙야간';
-            return '🏠비번';
+            if (type === 'day-s') return '주간';
+            if (type === 'night-s') return '야간';
+            return '비번';
         }
 
         function render() {
@@ -286,8 +326,6 @@
 
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-            // 총 42칸 (6주)
             const totalCells = 42;
 
             for (let i = 0; i < totalCells; i++) {
@@ -314,9 +352,9 @@
                     content = `
                         <div class="day-num">${dayNum}</div>
                         <div class="shifts">
-                            <div class="shift day-s"><span>☀️</span><span>${shift.day}</span></div>
-                            <div class="shift night-s"><span>🌙</span><span>${shift.night}</span></div>
-                            <div class="shift off-s"><span>🏠</span><span>${shift.off}</span></div>
+                            <div class="shift day-s"><span>주</span><span class="shift-team">${shift.day}</span></div>
+                            <div class="shift night-s"><span>야</span><span class="shift-team">${shift.night}</span></div>
+                            <div class="shift off-s"><span>비</span><span class="shift-team">${shift.off}</span></div>
                         </div>
                     `;
                 } else {
@@ -352,7 +390,6 @@
             render();
         }
 
-        // 스와이프
         let touchStartX = 0;
         document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
         document.addEventListener('touchend', e => {
